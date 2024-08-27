@@ -4,9 +4,9 @@ import datetime
 import time
 import pytz
 
-LAST_RELEASE = '2023_09_5'
-RELEASE = '2023_09_6'
-LAST_RELEASE_DATE = datetime.datetime(2024, 2, 8, tzinfo=pytz.timezone('UTC'))
+LAST_RELEASE = '2024_03_4'
+RELEASE = '2024_03_5'
+LAST_RELEASE_DATE = datetime.datetime(2024, 7, 1, tzinfo=pytz.timezone('UTC'))
 
 token = id = ''
 with open('.git_tokens', 'r') as fd:
@@ -55,12 +55,16 @@ print("## Bug Fixes:")
 bugs.sort(key=lambda x: x.number)
 for i, bug in enumerate(bugs):
     if bug.pull_request_urls is not None:
+        text = ''
         skipIt = any(label for label in bug.labels()
                      if 'not in release notes' in label.name)
-        if not skipIt and 'merged' in [x.event for x in bug.events()]:
-            text = 'pull'
-        else:
-            continue
+        try:
+            if not skipIt and 'merged' in [x.event for x in bug.events()]:
+                text = 'pull'
+            else:
+                continue
+        except TypeError:  # some weird rare thing
+            pass
     else:
         text = 'issue'
     print("  - %s\n (github %s #%d from %s)" %
@@ -134,8 +138,12 @@ for i, bug in enumerate(pulls):
     contributors.add(bug.user)
     if bug.issue():
         contributors.add(bug.issue().user)
-    skipIt = any(label for label in bug.labels
-                 if 'not in release notes' in label.name)
+    try:
+        skipIt = any(label for label in bug.labels
+                     if 'not in release notes' in label.name)
+    except AttributeError:
+        skipIt = any(label for label in bug.labels
+                     if 'not in release notes' in label['name'])
     if bug.number in seen:
         skipIt = True
     if skipIt:
