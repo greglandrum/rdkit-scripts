@@ -4,9 +4,9 @@ import datetime
 import time
 import pytz
 
-LAST_RELEASE = '2024_03_4'
-RELEASE = '2024_03_5'
-LAST_RELEASE_DATE = datetime.datetime(2024, 7, 1, tzinfo=pytz.timezone('UTC'))
+LAST_RELEASE = '2025_03_2'
+RELEASE = '2025_03_3'
+LAST_RELEASE_DATE = datetime.datetime(2025, 4, 26, tzinfo=pytz.timezone('UTC'))
 
 token = id = ''
 with open('.git_tokens', 'r') as fd:
@@ -39,6 +39,7 @@ relevant = [
 bugs = []
 feats = []
 cleanups = []
+docs = []
 for i in relevant:
     ls = [x.name for x in i.labels()]
     if 'not in release notes' in ls:
@@ -49,6 +50,8 @@ for i in relevant:
         feats.append(i)
     elif 'Cleanup' in ls:
         cleanups.append(i)
+    elif 'documentation' in ls:
+        docs.append(i)
 
 print("## Bug Fixes:")
 #bugs = [i for i in relevant if 'bug' in (x.name for x in i.labels())]
@@ -76,6 +79,24 @@ print("\n\n-----------------------------\n\n")
 print("## Cleanup work:")
 cleanups.sort(key=lambda x: x.number)
 for i, bug in enumerate(cleanups):
+    if bug.pull_request_urls is not None:
+        skipIt = any(label for label in bug.labels()
+                     if 'not in release notes' in label.name)
+        if not skipIt and 'merged' in [x.event for x in bug.events()]:
+            text = 'pull'
+        else:
+            continue
+    else:
+        text = 'issue'
+    print("  - %s\n (github %s #%d from %s)" %
+          (bug.title, text, bug.number, bug.user))
+    seen.add(bug.number)
+    contributors.add(bug.user)
+
+print("\n\n-----------------------------\n\n")
+print("## Documentation:")
+docs.sort(key=lambda x: x.number)
+for i, bug in enumerate(docs):
     if bug.pull_request_urls is not None:
         skipIt = any(label for label in bug.labels()
                      if 'not in release notes' in label.name)
@@ -167,4 +188,4 @@ for cnm in contributors:
     tracking[cnm] = nm
     time.sleep(0.2)
 print(tracking)
-print(','.join([str(x) for x in nms]))
+print(',|'.join([str(x) for x in nms]))
